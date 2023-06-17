@@ -139,6 +139,10 @@ En la siguiente ilustración podés ver cómo está organizado el proyecto para 
 │   │   └── package-lock.json   # configuracion de proyecto NodeJS
 │   └── frontend                # directorio para el frontend de la aplicacion
 │       ├── js                  # codigo javascript que se compila automáticamente
+│       │   ├──device.js        # la clase device
+│       │   ├──frameworks.js    # donde se realiza la conexion entre frontend y el backend 
+│       │   ├──httpResponse.js  # realza la respuestas http
+│       │   ├──main.js
 │       ├── static              # donde alojan archivos de estilos, imagenes, fuentes, etc.
 │       ├── ts                  # donde se encuentra el codigo TypeScript a desarrollar
 │       │   ├──device.ts        # la clase device
@@ -177,44 +181,113 @@ Para buscar un dispositivo se presiona el boton de buscar y se va aparecera una 
 ### Listar dispositivos
 
 al precionar el boton de listar aparecera una lista con todos los dispositivos en que se encuentrar en la base de datos donde podrar activa o desactivar.
-![architecture](doc/imagen3.png)  
+![architecture](doc/imagen2.png)  
 
-### Editar dispositivo
+### Editar o Eliminar dispositivo
 
-
-### Eliminar dispositivos
-
+Cuando aparece la lista, saltan los botones de editar y  eliminar, si quieres editar escribes lo que quieres editar y pulsas el boton podras se validaran los cambios, si pulsas el boton de eliminarse borra de la lista
 
 ### Frontend
 
-Completá todos los detalles sobre cómo armaste el frontend, sus interacciones, etc.
-
+Consta de la carpeta ts, js y static, tambien consta del index html. En la carpeta de ts se va a generar todo el codigo y las clases que se necesiten, y tambien se van a ir creando las js automaticamente, en la clase static estan las imagenes el css y los html.
+en la carpeta de ts esta device, framework, httpresponse, main.
+A la carpeta main va a llegar toda la informacion atraves de los input que estan en el index.html por las variables:
+iDispositivo = <HTMLInputElement>(document.getElementById("iDispositivo")); 
+iDescripcion = <HTMLInputElement>(document.getElementById("iDescripcion")
+iTipoDispositivo = <HTMLInputElement>(document.getElementById("iTipoDispositivo"));
+iEstado = <HTMLInputElement>document.getElementById("iswitch");
+iTipo = <HTMLInputElement>document.getElementById("iTipo");.
+Como se muestra nos van llegar estos valores y seran guardados en estas variables por el metedomo getEmelentById con cada uno de los de los id de los lementos que tiene el index. Estos seran guardados en el objeto device y con los metodos get y post que se utilizan en la clase de framewor son enviados al backend.
+ 
 ### Backend
+En este apartardo lo primero que tenemos que hablar es de mysql-conector.js como estana los datos para la conexion con la base de datos, el metodo para iniciar la conexion y el metodo para cerra la conexion que seran llamados por la clase index.js. En el index es la clase donde se va a realizar, donde vamos a inicializar el elframework de express para crear una aplicacion web en Node.js, especificamos el puerto de la aplicacion web, importamos el moodulo de express y creamos la instacia de la aplicaqion que alamacena la variable app.
 
-Completá todos los detalles de funcionamiento sobre el backend, sus interacciones con el cliente web, la base de datos, etc.
+tambien vamos a ejercutar los metodos get y post. eEl metodo GET Realiza una consulta SQL para seleccionar todos los registros de la tabla Devices en la base de datos. Luego, utiliza la función utils.query para ejecutar la consulta en la base de datos. Si la consulta tiene éxito, envía los resultados como respuesta con el código de estado 200. El metodo POST  Verifica el valor de req.body.operacion para determinar qué acción realizar. Dependiendo del valor, ejecuta consultas SQL para insertar, actualizar, eliminar o seleccionar registros de la tabla Devices en la base de datos. Los valores de los campos requeridos se obtienen de req.body y se utilizan en las consultas SQL.
 
 <details><summary><b>Ver los endpoints disponibles</b></summary><br>
 
-Completá todos los endpoints del backend con los metodos disponibles, los headers y body que recibe, lo que devuelve, ejemplos, etc.
+POST /devices/
+Método: POST
+Encabezados (Headers): No se especifica ningún encabezado en el código proporcionado.
+Datos en el cuerpo (Body):
+operacion: Valor esperado para determinar la operación a realizar (1, 2, 3 o 4).
+name: Nombre del dispositivo.
+description: Descripción del dispositivo.
+state: Estado del dispositivo (true o false).
+type: Tipo de dispositivo.
+Devolución en el código:
+Si la operación es exitosa, devuelve una respuesta con el estado HTTP 200 (OK).
+Si ocurre algún error, se muestra un mensaje de error en la consola.
 
 1) Devolver el estado de los dispositivos.
 
-```json
-{
-    "method": "get",
-    "request_headers": "application/json",
-    "request_body": "",
-    "response_code": 200,
-    "request_body": {
-        "devices": [
-            {
-                "id": 1,
-                "status": true,
-                "description": "Kitchen light"
-            }
-        ]
-    },
-}
+app.post('/devices/',function(req, res, next) {
+    var estado = 0;
+    var valor = req.body.operacion;  //se recibe el valor para preguntar que consulta va a realizar
+    var sql="";
+    var values;
+
+    if(req.body.operacion == null){
+         res.status(409);
+         res.send("el texto no es valido o esta vacio");
+    }else{
+        if(JSON.parse(req.body.state) == true){
+            estado = 1;
+        }
+        if(JSON.parse(req.body.state) == false){
+            estado = 0;
+        }
+
+        if(valor == 1){
+            sql = 'INSERT INTO Devices (name, description, state, type) VALUES (?, ?, ?, ?)';// consulta para insertar los datos
+            values = [req.body.name, req.body.description,estado, req.body.type];
+            utils.query(sql, values, (error, result) => {   // insertar valores en la base de datos
+               if (error) { //si aparece un error se muestra
+                    console.error('Error en la consulta de inserción:', error);
+               } else {
+                    console.log('Registro insertado con éxito. ID:', result.insertId);
+                    res.status(200);
+                }
+            });
+        }else if(valor == 2){
+            sql ='UPDATE Devices SET name = ?, description = ?, state = ?, type = ? WHERE id = ?';// consulta para modificar los datos
+            values = [req.body.name, req.body.description, estado, req.body.type, req.body.id];
+            utils.query(sql, values, (error, result) => {   // modifica la base de datos 
+                if (error) {    //si aparece un error se muestra
+                    console.error('Error en la modificacion de la tabla:', error);
+                } else {
+                    console.log('Registro de una modificacion con exito:', result.insertId);
+                    res.status(200);
+                }
+            });
+        }else if(valor == 3){
+            sql ='DELETE FROM Devices WHERE id = ?';// consulta para eliminar los datos
+            values = [req.body.id];
+            utils.query(sql, values, (error, result) => {   // elimina los datos de la base de datos 
+                if (error) {    //si aparece un error se muestra
+                    console.error('Error en el borrado:', error);
+                } else {
+                    console.log('Borrado con exito');
+                    res.status(200);
+                }
+            });
+        }else if(valor == 4){
+            console.log("entro");
+            sql = 'SELECT name, description, state FROM Devices WHERE name = ?';// consulta para modificar los datos
+            values = [req.body.name];
+            utils.query(sql, values, (error, result) => {   // elimina los datos de la base de datos 
+                if (error) {    //si aparece un error se muestra
+                    console.error('Error en la consulta:', error);
+                } else {
+                    console.log('Consulta exitosa. nombre:', result.insertId);
+                    res.send(result).status(200);
+                    console.log(result);
+                }
+            });
+    
+        }
+    }
+});
 ``` 
 
 </details>
@@ -264,7 +337,7 @@ Si te gustó este proyecto y quisieras apoyarlo, cualquiera de estas acciones es
 ## Autores 👥
 
 Las colaboraciones principales fueron realizadas por:
-
+* **[Alejandro Anselmi](https://github.com/ale-12121986)**: modificación para para el trabajo practico
 * **[Agustin Bassi](https://github.com/agustinBassi)**: Ideación, puesta en marcha y mantenimiento del proyecto.
 * **[Ernesto Giggliotti](https://github.com/ernesto-g)**: Creación inicial del frontend, elección de Material Design.
 * **[Brian Ducca](https://github.com/brianducca)**: Ayuda para conectar el backend a la base de datos, puesta a punto de imagen de Docker.

@@ -33,11 +33,10 @@ app.post('/devices/',function(req, res, next) {
     var valor = req.body.operacion;  //se recibe el valor para preguntar que consulta va a realizar
     var sql="";
     var values;
-    //datoRecibido.push(req.body);
-    console.log(req.body);
+   
     if(req.body.operacion == null){
          res.status(409);
-         //res.send("el texto no es valido o esta vacio");
+         res.send("el texto no es valido o esta vacio");
     }else{
         if(JSON.parse(req.body.state) == true){
             estado = 1;
@@ -45,8 +44,7 @@ app.post('/devices/',function(req, res, next) {
         if(JSON.parse(req.body.state) == false){
             estado = 0;
         }
-        //res.status(200);
-        //connectDatabase(utils);//Abre la base de datos
+
         if(valor == 1){
             sql = 'INSERT INTO Devices (name, description, state, type) VALUES (?, ?, ?, ?)';// consulta para insertar los datos
             values = [req.body.name, req.body.description,estado, req.body.type];
@@ -58,7 +56,6 @@ app.post('/devices/',function(req, res, next) {
                     res.status(200);
                 }
             });
-            //res.send("Todo ok");
         }else if(valor == 2){
             sql ='UPDATE Devices SET name = ?, description = ?, state = ?, type = ? WHERE id = ?';// consulta para modificar los datos
             values = [req.body.name, req.body.description, estado, req.body.type, req.body.id];
